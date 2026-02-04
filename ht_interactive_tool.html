@@ -1,0 +1,1275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heat Transfer Boundary Conditions - Interactive Tool</title>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2c5282 0%, #3b82f6 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 400px 1fr;
+            gap: 0;
+            min-height: 700px;
+        }
+        
+        .controls {
+            background: #f8f9fa;
+            padding: 30px;
+            border-right: 3px solid #e0e0e0;
+            overflow-y: auto;
+            max-height: 900px;
+        }
+        
+        .control-group {
+            margin-bottom: 25px;
+        }
+        
+        .control-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+            font-size: 0.95em;
+        }
+        
+        .control-group select,
+        .control-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border 0.3s;
+        }
+        
+        .control-group select:focus,
+        .control-group input:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+        
+        .control-group .help-text {
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 5px;
+            font-style: italic;
+        }
+        
+        .calculate-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+            margin-top: 20px;
+        }
+        
+        .calculate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(37, 99, 235, 0.4);
+        }
+        
+        .calculate-btn:active {
+            transform: translateY(0);
+        }
+        
+        .results {
+            padding: 30px;
+            overflow-y: auto;
+            max-height: 900px;
+        }
+        
+        .result-card {
+            background: #f8f9fa;
+            border-left: 5px solid #3b82f6;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+        }
+        
+        .result-card.success {
+            border-left-color: #28a745;
+            background: #e8f5e9;
+        }
+        
+        .result-card.warning {
+            border-left-color: #ffc107;
+            background: #fff8e1;
+        }
+        
+        .result-card.error {
+            border-left-color: #dc3545;
+            background: #ffebee;
+        }
+        
+        .result-card h3 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 1.3em;
+        }
+        
+        .result-card .equation {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 1.1em;
+            margin: 10px 0;
+            border: 2px solid #e0e0e0;
+        }
+        
+        .result-card .steps {
+            margin-top: 15px;
+        }
+        
+        .result-card .steps div {
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .result-card .steps div:last-child {
+            border-bottom: none;
+        }
+        
+        #plot {
+            width: 100%;
+            height: 400px;
+            margin-bottom: 20px;
+        }
+        
+        #schematic {
+            width: 100%;
+            height: 350px;
+            margin-bottom: 20px;
+            border: 2px solid #3b82f6;
+            border-radius: 10px;
+            background: white;
+        }
+        
+        .physical-interpretation {
+            background: linear-gradient(135deg, #fff5e6 0%, #ffe0b3 100%);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border: 2px solid #ff9800;
+        }
+        
+        .physical-interpretation h4 {
+            color: #e65100;
+            margin-bottom: 10px;
+        }
+        
+        .energy-balance {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border: 2px solid #2196f3;
+        }
+        
+        .energy-balance h4 {
+            color: #0d47a1;
+            margin-bottom: 10px;
+        }
+        
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .controls {
+                border-right: none;
+                border-bottom: 3px solid #e0e0e0;
+            }
+        }
+        
+        .case-description {
+            background: #eff6ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #3b82f6;
+        }
+        
+        .case-description h4 {
+            color: #1e40af;
+            margin-bottom: 8px;
+        }
+        
+        .case-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+        
+        .case-card {
+            padding: 15px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: white;
+            text-align: center;
+        }
+        
+        .case-card:hover {
+            border-color: #3b82f6;
+            background: #eff6ff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+        }
+        
+        .case-card.active {
+            border-color: #2563eb;
+            background: #dbeafe;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+        
+        .case-card .case-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+        
+        .case-card .case-name {
+            font-size: 13px;
+            line-height: 1.3;
+        }
+        
+        .case-description p {
+            color: #424242;
+            line-height: 1.5;
+        }
+        
+        .thermal-props {
+            background: #e8eaf6;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #5c6bc0;
+        }
+        
+        .thermal-props h4 {
+            color: #3f51b5;
+            margin-bottom: 10px;
+            font-size: 0.95em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔥 Heat Transfer Boundary Conditions</h1>
+            <p>Interactive Tool for 1D Steady-State Conduction</p>
+            <p style="margin-top: 15px; font-size: 0.95em; opacity: 0.95;">Developed by <strong>Dr. Nuha Aljuneidi</strong></p>
+            <p style="font-size: 0.85em; opacity: 0.85;">Lawrence Technological University</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="controls">
+                <h3 style="margin-bottom: 15px; color: #1e40af;">Select Boundary Condition:</h3>
+                
+                <div class="case-selector">
+                    <div class="case-card active" onclick="selectCase('dd')" id="card-dd">
+                        <div class="case-icon">🌡️</div>
+                        <div class="case-name">Fixed Temperatures</div>
+                    </div>
+                    <div class="case-card" onclick="selectCase('dn')" id="card-dn">
+                        <div class="case-icon">📊</div>
+                        <div class="case-name">Fixed T + Flux</div>
+                    </div>
+                    <div class="case-card" onclick="selectCase('nn_inconsistent')" id="card-nn_inconsistent">
+                        <div class="case-icon">⚠️</div>
+                        <div class="case-name">Heat In Both Sides</div>
+                    </div>
+                    <div class="case-card" onclick="selectCase('nn_consistent')" id="card-nn_consistent">
+                        <div class="case-icon">⚖️</div>
+                        <div class="case-name">Equal Flux Ends</div>
+                    </div>
+                    <div class="case-card" onclick="selectCase('robin')" id="card-robin">
+                        <div class="case-icon">💨</div>
+                        <div class="case-name">Convection BC</div>
+                    </div>
+                    <div class="case-card" onclick="selectCase('insulated')" id="card-insulated">
+                        <div class="case-icon">🧊</div>
+                        <div class="case-name">Insulated + Fixed T</div>
+                    </div>
+                </div>
+                
+                <div id="caseDescription" class="case-description"></div>
+                
+                <div class="thermal-props">
+                    <h4>⚙️ Material Properties:</h4>
+                    <label for="kInput">Thermal Conductivity k (W/m·K):</label>
+                    <input type="number" id="kInput" value="1.0" min="0.1" step="0.1" style="margin-bottom: 10px;">
+                    <label for="lengthInput">Wall Thickness L (m):</label>
+                    <input type="number" id="lengthInput" value="0.1" min="0.01" max="1" step="0.01">
+                    <div style="margin-top: 10px; padding: 10px; background: #fef3c7; border-radius: 5px; font-size: 0.85em; border-left: 3px solid #f59e0b;">
+                        <strong>Sign Convention:</strong> Heat flux q″ is positive when flowing in +x direction (left to right). Negative q″ means heat flows in -x direction.
+                    </div>
+                </div>
+                
+                <div id="dynamicInputs"></div>
+                
+                <button class="calculate-btn" onclick="calculate()">🔬 Calculate Temperature Profile</button>
+            </div>
+            
+            <div class="results">
+                <canvas id="schematic"></canvas>
+                <div id="plot"></div>
+                <div id="resultOutput"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let currentCase = 'dd';
+        
+        function selectCase(caseId) {
+            currentCase = caseId;
+            
+            // Update active card styling
+            document.querySelectorAll('.case-card').forEach(card => {
+                card.classList.remove('active');
+            });
+            document.getElementById('card-' + caseId).classList.add('active');
+            
+            // Update case description and inputs
+            updateCaseDescription();
+        }
+        
+        const caseInfo = {
+            dd: {
+                title: 'Fixed Temperatures at Both Surfaces',
+                description: 'Both surfaces maintained at constant temperatures. Most common in building applications (e.g., interior and exterior walls).',
+                inputs: ['T(0) — Left Surface (°C)', 'T(L) — Right Surface (°C)'],
+                defaults: [20, 5],
+                visual: 'fixed_both'
+            },
+            dn: {
+                title: 'Fixed Temperature + Specified Heat Flux',
+                description: 'One surface at fixed temperature, other has known heat flux (e.g., heated surface with controlled heat input).',
+                inputs: ['T(0) — Left Surface (°C)', 'q″(L) — Heat Flux at Right (W/m²)'],
+                defaults: [20, 50],
+                visual: 'fixed_flux'
+            },
+            nn_inconsistent: {
+                title: 'Heat Flux Entering from Both Sides (Physically Impossible)',
+                description: 'Heat entering from both surfaces (opposite flux directions) with no exit path. Violates energy conservation at steady state.',
+                inputs: ['q″(0) — Left Surface (W/m²)', 'q″(L) — Right Surface (W/m²)'],
+                defaults: [50, -50],
+                visual: 'flux_both_in'
+            },
+            nn_consistent: {
+                title: 'Equal Heat Flux at Both Ends',
+                description: 'Same flux magnitude: heat enters at x=0 and exits at x=L. Energy balanced but absolute temperature undetermined.',
+                inputs: ['q″(0) IN — Heat Flux Entering (W/m²)', 'q″(L) OUT — Heat Flux Leaving (W/m²)'],
+                defaults: [50, 50],
+                visual: 'flux_equal'
+            },
+            robin: {
+                title: 'Convection Boundary Condition',
+                description: 'Surface exposed to fluid flow with convection. Combines Newton\'s law of cooling with Fourier\'s law.',
+                inputs: ['h — Convection Coefficient (W/m²·K)', 'T∞ — Fluid Temperature (°C)', 'T(L) — Right Surface (°C)'],
+                defaults: [25, 40, 5],
+                visual: 'convection'
+            },
+            insulated: {
+                title: 'Insulated Boundary + Fixed Temperature',
+                description: 'One surface perfectly insulated (zero heat flux), other at fixed temperature. Results in uniform temperature.',
+                inputs: ['T(L) — Right Surface (°C)'],
+                defaults: [60],
+                visual: 'insulated'
+            }
+        };
+        
+        function updateCaseDescription() {
+            const info = caseInfo[currentCase];
+            
+            const descDiv = document.getElementById('caseDescription');
+            descDiv.innerHTML = `
+                <h4>${info.title}</h4>
+                <p>${info.description}</p>
+            `;
+            
+            const inputsDiv = document.getElementById('dynamicInputs');
+            inputsDiv.innerHTML = '';
+            
+            info.inputs.forEach((label, idx) => {
+                const div = document.createElement('div');
+                div.className = 'control-group';
+                div.innerHTML = `
+                    <label for="input${idx}">${label}:</label>
+                    <input type="number" id="input${idx}" value="${info.defaults[idx]}" step="1">
+                `;
+                inputsDiv.appendChild(div);
+            });
+        }
+        
+        function drawSchematic(visualType, values, k) {
+            const canvas = document.getElementById('schematic');
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width = canvas.offsetWidth;
+            const height = canvas.height = canvas.offsetHeight;
+            
+            ctx.clearRect(0, 0, width, height);
+            
+            // Wall dimensions (thicker, more prominent)
+            const wallLeft = width * 0.35;
+            const wallRight = width * 0.65;
+            const wallTop = height * 0.15;
+            const wallBottom = height * 0.85;
+            const wallWidth = wallRight - wallLeft;
+            
+            // Draw building context - exterior (left side)
+            ctx.fillStyle = '#E3F2FD';
+            ctx.fillRect(0, 0, wallLeft, height);
+            ctx.fillStyle = '#90CAF9';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('EXTERIOR', wallLeft / 2, 30);
+            ctx.font = '11px Arial';
+            ctx.fillText('(outside)', wallLeft / 2, 45);
+            
+            // Draw building context - interior (right side)
+            ctx.fillStyle = '#FFF8E1';
+            ctx.fillRect(wallRight, 0, width - wallRight, height);
+            ctx.fillStyle = '#F57C00';
+            ctx.font = 'bold 14px Arial';
+            ctx.fillText('INTERIOR', (wallRight + width) / 2, 30);
+            ctx.font = '11px Arial';
+            ctx.fillText('(inside)', (wallRight + width) / 2, 45);
+            
+            // Draw wall with brick/concrete texture
+            drawWallTexture(ctx, wallLeft, wallTop, wallWidth, wallBottom - wallTop);
+            
+            // Wall outline with depth
+            ctx.strokeStyle = '#424242';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(wallLeft, wallTop, wallWidth, wallBottom - wallTop);
+            
+            // Add depth lines to show 3D section (like looking into the wall)
+            ctx.strokeStyle = '#757575';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([3, 3]);
+            
+            // Depth lines from corners going "into" the page
+            const depthOffset = 15;
+            ctx.beginPath();
+            ctx.moveTo(wallLeft, wallTop);
+            ctx.lineTo(wallLeft - depthOffset, wallTop - depthOffset);
+            ctx.moveTo(wallRight, wallTop);
+            ctx.lineTo(wallRight + depthOffset, wallTop - depthOffset);
+            ctx.moveTo(wallLeft, wallBottom);
+            ctx.lineTo(wallLeft - depthOffset, wallBottom + depthOffset);
+            ctx.moveTo(wallRight, wallBottom);
+            ctx.lineTo(wallRight + depthOffset, wallBottom + depthOffset);
+            ctx.stroke();
+            
+            // Back face outline
+            ctx.strokeStyle = '#9E9E9E';
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(wallLeft - depthOffset, wallTop - depthOffset, wallWidth, wallBottom - wallTop);
+            ctx.setLineDash([]);
+            
+            // Draw section cut indicators (architectural standard)
+            // Top section cut lines
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 4;
+            ctx.setLineDash([]);
+            
+            // Left edge section cut
+            ctx.beginPath();
+            ctx.moveTo(wallLeft - 5, wallTop - 10);
+            ctx.lineTo(wallLeft - 5, wallBottom + 10);
+            ctx.stroke();
+            
+            // Right edge section cut
+            ctx.beginPath();
+            ctx.moveTo(wallRight + 5, wallTop - 10);
+            ctx.lineTo(wallRight + 5, wallBottom + 10);
+            ctx.stroke();
+            
+            // Section cut pattern (hatching on cut edges)
+            ctx.strokeStyle = '#424242';
+            ctx.lineWidth = 2;
+            const hatchSpacing = 8;
+            
+            // Left edge hatching
+            for (let y = wallTop; y < wallBottom; y += hatchSpacing) {
+                ctx.beginPath();
+                ctx.moveTo(wallLeft - 5, y);
+                ctx.lineTo(wallLeft + 10, y + 10);
+                ctx.stroke();
+            }
+            
+            // Right edge hatching
+            for (let y = wallTop; y < wallBottom; y += hatchSpacing) {
+                ctx.beginPath();
+                ctx.moveTo(wallRight + 5, y);
+                ctx.lineTo(wallRight - 10, y + 10);
+                ctx.stroke();
+            }
+            
+            // Draw dimension lines showing wall thickness
+            ctx.strokeStyle = '#666';
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([]);
+            
+            // Top dimension line
+            ctx.beginPath();
+            ctx.moveTo(wallLeft, wallTop - 50);
+            ctx.lineTo(wallRight, wallTop - 50);
+            ctx.stroke();
+            
+            // Dimension arrows
+            drawDimensionArrow(ctx, wallLeft, wallTop - 50, 'right');
+            drawDimensionArrow(ctx, wallRight, wallTop - 50, 'left');
+            
+            // Thickness label
+            ctx.fillStyle = '#424242';
+            ctx.font = 'bold 12px Arial';
+            ctx.textAlign = 'center';
+            const L = parseFloat(document.getElementById('lengthInput').value);
+            ctx.fillText(`L = ${L} m`, (wallLeft + wallRight) / 2, wallTop - 35);
+            ctx.font = '10px Arial';
+            ctx.fillText('(wall thickness)', (wallLeft + wallRight) / 2, wallTop - 20);
+            
+            // Position labels (simple text, no arrows)
+            ctx.fillStyle = '#424242';
+            ctx.font = 'bold 11px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('x = 0', wallLeft, wallBottom + 25);
+            ctx.fillText('x = L', wallRight, wallBottom + 25);
+            
+            // Add "SECTION A-A" label below the wall
+            ctx.fillStyle = '#000';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('SECTION A-A', (wallLeft + wallRight) / 2, wallBottom + 50);
+            
+            // Draw based on case type
+            switch(visualType) {
+                case 'fixed_both':
+                    // Fixed temperature markers
+                    drawTempMarker(ctx, wallLeft - 60, (wallTop + wallBottom) / 2, `T₀ = ${values[0]}°C`, 'left');
+                    drawTempMarker(ctx, wallRight + 60, (wallTop + wallBottom) / 2, `Tₗ = ${values[1]}°C`, 'right');
+                    break;
+                    
+                case 'fixed_flux':
+                    // Fixed temp on left, flux on right
+                    drawTempMarker(ctx, wallLeft - 60, (wallTop + wallBottom) / 2, `T₀ = ${values[0]}°C`, 'left');
+                    drawFluxArrow(ctx, wallRight, (wallTop + wallBottom) / 2, 'right', `q″ = ${values[1]} W/m²`);
+                    break;
+                    
+                case 'flux_both_in':
+                    // Flux entering from both sides
+                    drawFluxArrow(ctx, wallLeft, (wallTop + wallBottom) / 2, 'in_left', `q″ = ${values[0]} W/m²`);
+                    drawFluxArrow(ctx, wallRight, (wallTop + wallBottom) / 2, 'in_right', `q″ = ${values[1]} W/m²`);
+                    
+                    // Warning overlay
+                    ctx.fillStyle = 'rgba(220, 53, 69, 0.15)';
+                    ctx.fillRect(wallLeft, wallTop, wallWidth, wallBottom - wallTop);
+                    ctx.font = 'bold 30px Arial';
+                    ctx.fillStyle = '#dc3545';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('⚠', (wallLeft + wallRight) / 2, wallTop - 40);
+                    ctx.font = 'bold 12px Arial';
+                    ctx.fillStyle = '#c62828';
+                    ctx.fillText('ENERGY IMBALANCE!', (wallLeft + wallRight) / 2, (wallTop + wallBottom) / 2);
+                    break;
+                    
+                case 'flux_equal':
+                    // Equal flux - both arrows pointing right (heat flowing through)
+                    drawFluxArrow(ctx, wallLeft, (wallTop + wallBottom) / 2, 'in_left', `q″ = ${values[0]} W/m²`);
+                    drawFluxArrow(ctx, wallRight + 40, (wallTop + wallBottom) / 2, 'out', `q″ = ${values[1]} W/m²`);
+                    break;
+                    
+                case 'convection':
+                    // Convection on left
+                    drawConvection(ctx, wallLeft, wallTop, wallBottom, values[0], values[1]);
+                    drawTempMarker(ctx, wallRight + 60, (wallTop + wallBottom) / 2, `Tₗ = ${values[2]}°C`, 'right');
+                    break;
+                    
+                case 'insulated':
+                    // Insulation on left
+                    drawInsulation(ctx, wallLeft, wallTop, wallBottom);
+                    drawTempMarker(ctx, wallRight + 60, (wallTop + wallBottom) / 2, `Tₗ = ${values[0]}°C`, 'right');
+                    break;
+            }
+        }
+        
+        function drawWallTexture(ctx, x, y, width, height) {
+            // Base wall color
+            const gradient = ctx.createLinearGradient(x, y, x + width, y);
+            gradient.addColorStop(0, '#9E9E9E');
+            gradient.addColorStop(0.5, '#BDBDBD');
+            gradient.addColorStop(1, '#9E9E9E');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(x, y, width, height);
+            
+            // Draw brick pattern
+            const brickHeight = 20;
+            const brickWidth = 50;
+            
+            ctx.strokeStyle = '#757575';
+            ctx.lineWidth = 2;
+            
+            let offset = 0;
+            for (let row = y; row < y + height; row += brickHeight) {
+                for (let col = x + offset; col < x + width; col += brickWidth) {
+                    ctx.strokeRect(col, row, Math.min(brickWidth, x + width - col), Math.min(brickHeight, y + height - row));
+                }
+                offset = offset === 0 ? brickWidth / 2 : 0;
+            }
+            
+            // Add some shading for 3D effect
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(x + width - 10, y, 10, height);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.fillRect(x, y, 10, height);
+        }
+        
+        function drawPositionMarker(ctx, x, y, text) {
+            // Draw small arrow pointing to position
+            ctx.strokeStyle = '#424242';
+            ctx.fillStyle = '#424242';
+            ctx.lineWidth = 2;
+            
+            ctx.beginPath();
+            ctx.moveTo(x, y + 10);
+            ctx.lineTo(x, y + 20);
+            ctx.stroke();
+            
+            // Arrow head
+            ctx.beginPath();
+            ctx.moveTo(x, y + 10);
+            ctx.lineTo(x - 4, y + 16);
+            ctx.lineTo(x + 4, y + 16);
+            ctx.closePath();
+            ctx.fill();
+            
+            ctx.fillText(text, x, y + 35);
+        }
+        
+        function drawDimensionArrow(ctx, x, y, direction) {
+            ctx.fillStyle = '#666';
+            ctx.beginPath();
+            if (direction === 'right') {
+                ctx.moveTo(x, y);
+                ctx.lineTo(x + 8, y - 4);
+                ctx.lineTo(x + 8, y + 4);
+            } else {
+                ctx.moveTo(x, y);
+                ctx.lineTo(x - 8, y - 4);
+                ctx.lineTo(x - 8, y + 4);
+            }
+            ctx.closePath();
+            ctx.fill();
+            
+            // Vertical tick marks
+            ctx.strokeStyle = '#666';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(x, y - 8);
+            ctx.lineTo(x, y + 8);
+            ctx.stroke();
+        }
+        
+        function drawTempMarker(ctx, x, y, text, side) {
+            // Draw thermometer icon
+            ctx.fillStyle = '#1976D2';
+            ctx.strokeStyle = '#0D47A1';
+            ctx.lineWidth = 2;
+            
+            // Thermometer bulb
+            ctx.beginPath();
+            ctx.arc(x, y, 12, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.stroke();
+            
+            // Thermometer stem
+            const stemHeight = 20;
+            const stemWidth = 6;
+            ctx.fillRect(x - stemWidth/2, y - stemHeight - 12, stemWidth, stemHeight);
+            ctx.strokeRect(x - stemWidth/2, y - stemHeight - 12, stemWidth, stemHeight);
+            
+            // Temperature value in box
+            const textWidth = ctx.measureText(text).width + 20;
+            const boxX = side === 'left' ? x - textWidth - 25 : x + 25;
+            
+            ctx.fillStyle = 'white';
+            ctx.strokeStyle = '#1976D2';
+            ctx.lineWidth = 2;
+            ctx.fillRect(boxX, y - 15, textWidth, 30);
+            ctx.strokeRect(boxX, y - 15, textWidth, 30);
+            
+            // Text
+            ctx.fillStyle = '#0D47A1';
+            ctx.font = 'bold 13px Arial';
+            ctx.textAlign = side === 'left' ? 'right' : 'left';
+            ctx.fillText(text, side === 'left' ? boxX + textWidth - 10 : boxX + 10, y + 5);
+        }
+        
+        function drawFluxArrow(ctx, x, y, direction, text) {
+            ctx.strokeStyle = '#f44336';
+            ctx.fillStyle = '#f44336';
+            ctx.lineWidth = 3;
+            
+            const arrowLen = 40;
+            let dx, startX, headDir;
+            
+            switch(direction) {
+                case 'in_left':  // Arrow from left entering wall (pointing right)
+                    startX = x - 60;
+                    dx = arrowLen;
+                    headDir = 'right';
+                    break;
+                case 'in_right':  // Arrow from right entering wall (pointing left)
+                    startX = x + 60;
+                    dx = -arrowLen;
+                    headDir = 'left';
+                    break;
+                case 'out':  // Arrow exiting wall to the right
+                    startX = x + 10;
+                    dx = arrowLen;
+                    headDir = 'right';
+                    break;
+                default:  // Legacy 'left' and 'right' cases
+                    dx = direction === 'left' ? -arrowLen : arrowLen;
+                    startX = direction === 'left' ? x - 60 : x + 60;
+                    headDir = direction === 'left' ? 'left' : 'right';
+            }
+            
+            // Arrow line
+            ctx.beginPath();
+            ctx.moveTo(startX, y);
+            ctx.lineTo(startX + dx, y);
+            ctx.stroke();
+            
+            // Arrow head
+            const headSize = 10;
+            ctx.beginPath();
+            ctx.moveTo(startX + dx, y);
+            if (headDir === 'right') {
+                ctx.lineTo(startX + dx - headSize, y - headSize/2);
+                ctx.lineTo(startX + dx - headSize, y + headSize/2);
+            } else {  // left
+                ctx.lineTo(startX + dx + headSize, y - headSize/2);
+                ctx.lineTo(startX + dx + headSize, y + headSize/2);
+            }
+            ctx.closePath();
+            ctx.fill();
+            
+            // Label
+            ctx.font = 'bold 12px Arial';
+            ctx.fillStyle = '#c62828';
+            ctx.textAlign = 'center';
+            ctx.fillText(text, startX + dx/2, y - 15);
+        }
+        
+        function drawConvection(ctx, x, wallTop, wallBottom, h, Tinf) {
+            // Draw air/fluid region
+            const airGradient = ctx.createLinearGradient(x - 120, wallTop, x, wallTop);
+            airGradient.addColorStop(0, '#E3F2FD');
+            airGradient.addColorStop(1, '#90CAF9');
+            ctx.fillStyle = airGradient;
+            ctx.fillRect(x - 120, wallTop - 20, 120, wallBottom - wallTop + 40);
+            
+            ctx.strokeStyle = '#1976D2';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.strokeRect(x - 120, wallTop - 20, 120, wallBottom - wallTop + 40);
+            ctx.setLineDash([]);
+            
+            // Draw flowing air particles/streamlines
+            ctx.strokeStyle = '#1976D2';
+            ctx.lineWidth = 2;
+            
+            const numStreams = 6;
+            for (let i = 0; i < numStreams; i++) {
+                const yPos = wallTop + (wallBottom - wallTop) * (i / (numStreams - 1));
+                
+                ctx.beginPath();
+                ctx.moveTo(x - 110, yPos);
+                
+                // Create wavy line
+                for (let j = 0; j < 8; j++) {
+                    const xPos = x - 110 + j * 12;
+                    const wave = Math.sin(j * 0.8) * 4;
+                    ctx.lineTo(xPos, yPos + wave);
+                }
+                ctx.stroke();
+                
+                // Add arrow heads at end
+                const arrowX = x - 15;
+                ctx.fillStyle = '#1976D2';
+                ctx.beginPath();
+                ctx.moveTo(arrowX, yPos);
+                ctx.lineTo(arrowX - 6, yPos - 4);
+                ctx.lineTo(arrowX - 6, yPos + 4);
+                ctx.closePath();
+                ctx.fill();
+            }
+            
+            // Air properties label box
+            ctx.fillStyle = 'white';
+            ctx.strokeStyle = '#1976D2';
+            ctx.lineWidth = 2;
+            const boxWidth = 100;
+            const boxHeight = 60;
+            const boxX = x - 110;
+            const boxY = wallTop - 15;
+            
+            ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
+            ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
+            
+            // Labels
+            ctx.fillStyle = '#0D47A1';
+            ctx.font = 'bold 13px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('AIR FLOW', boxX + boxWidth/2, boxY + 18);
+            ctx.font = '11px Arial';
+            ctx.fillText(`h = ${h} W/m²·K`, boxX + boxWidth/2, boxY + 35);
+            ctx.fillText(`T∞ = ${Tinf}°C`, boxX + boxWidth/2, boxY + 50);
+        }
+        
+        function drawInsulation(ctx, x, wallTop, wallBottom) {
+            const insWidth = 40;
+            const insHeight = wallBottom - wallTop;
+            
+            // Draw insulation material with fiberglass-like texture
+            const gradient = ctx.createLinearGradient(x - insWidth - 10, wallTop, x - 10, wallTop);
+            gradient.addColorStop(0, '#FFF3E0');
+            gradient.addColorStop(0.5, '#FFE0B2');
+            gradient.addColorStop(1, '#FFCC80');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(x - insWidth - 10, wallTop, insWidth, insHeight);
+            
+            // Draw fiberglass/wool texture
+            ctx.strokeStyle = '#FF9800';
+            ctx.lineWidth = 1.5;
+            
+            // Random fibrous lines
+            for (let i = 0; i < 30; i++) {
+                ctx.beginPath();
+                const y1 = wallTop + Math.random() * insHeight;
+                const y2 = y1 + (Math.random() - 0.5) * 20;
+                const xOffset = Math.random() * insWidth;
+                ctx.moveTo(x - insWidth - 10 + xOffset, y1);
+                ctx.lineTo(x - insWidth - 10 + xOffset + (Math.random() - 0.5) * 15, y2);
+                ctx.stroke();
+            }
+            
+            // Outline
+            ctx.strokeStyle = '#E65100';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(x - insWidth - 10, wallTop, insWidth, insHeight);
+            
+            // Insulation label box
+            ctx.fillStyle = 'white';
+            ctx.strokeStyle = '#E65100';
+            ctx.lineWidth = 2;
+            const boxWidth = 90;
+            const boxHeight = 50;
+            const boxX = x - insWidth/2 - 55;
+            const boxY = (wallTop + wallBottom)/2 - 60;
+            
+            ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
+            ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
+            
+            ctx.fillStyle = '#E65100';
+            ctx.font = 'bold 13px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('INSULATION', boxX + boxWidth/2, boxY + 20);
+            ctx.font = '12px Arial';
+            ctx.fillText('q″ = 0', boxX + boxWidth/2, boxY + 38);
+            
+            // Draw "no heat flux" symbol
+            const symX = x - insWidth/2 - 10;
+            const symY = (wallTop + wallBottom)/2 + 40;
+            
+            ctx.strokeStyle = '#E65100';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(symX, symY, 20, 0, 2 * Math.PI);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(symX - 14, symY - 14);
+            ctx.lineTo(symX + 14, symY + 14);
+            ctx.stroke();
+        }
+        
+        function getInputs() {
+            const L = parseFloat(document.getElementById('lengthInput').value);
+            const k = parseFloat(document.getElementById('kInput').value);
+            const info = caseInfo[currentCase];
+            const values = info.inputs.map((_, idx) => 
+                parseFloat(document.getElementById(`input${idx}`).value)
+            );
+            return { L, k, values };
+        }
+        
+        function calculate() {
+            const { L, k, values } = getInputs();
+            let result;
+            
+            // Draw schematic first
+            drawSchematic(caseInfo[currentCase].visual, values, k);
+            
+            switch(currentCase) {
+                case 'dd':
+                    result = solveDirichletDirichlet(L, k, values[0], values[1]);
+                    break;
+                case 'dn':
+                    result = solveDirichletNeumann(L, k, values[0], values[1]);
+                    break;
+                case 'nn_inconsistent':
+                    result = solveNeumannInconsistent(L, k, values[0], values[1]);
+                    break;
+                case 'nn_consistent':
+                    result = solveNeumannConsistent(L, k, values[0], values[1]);
+                    break;
+                case 'robin':
+                    result = solveRobin(L, k, values[0], values[1], values[2]);
+                    break;
+                case 'insulated':
+                    result = solveInsulated(L, k, values[0]);
+                    break;
+            }
+            
+            displayResult(result, L, k);
+        }
+        
+        function solveDirichletDirichlet(L, k, T0, TL) {
+            const C2 = T0;
+            const C1 = (TL - C2) / L;
+            const q = -k * C1;
+            
+            return {
+                type: 'success',
+                C1, C2,
+                equation: `T(x) = ${C1.toFixed(2)}x + ${C2.toFixed(2)} °C`,
+                heatFlux: q,
+                steps: [
+                    `Apply BC at x=0: T(0) = C₂ = ${T0}°C`,
+                    `Apply BC at x=L: T(L) = C₁·${L} + ${C2.toFixed(2)} = ${TL}°C`,
+                    `Solve for C₁: C₁ = (${TL} - ${C2.toFixed(2)})/${L} = ${C1.toFixed(2)} K/m`,
+                    `Heat flux: q″ = -k·dT/dx = -${k}·${C1.toFixed(2)} = ${q.toFixed(2)} W/m²`
+                ],
+                interpretation: `Linear temperature drop from ${T0}°C to ${TL}°C. Constant heat flux ${q.toFixed(2)} W/m² through the wall.`,
+                energyBalance: {
+                    fluxIn: Math.abs(q),
+                    fluxOut: Math.abs(q),
+                    balanced: true
+                }
+            };
+        }
+        
+        function solveDirichletNeumann(L, k, T0, qL) {
+            const C1 = -qL / k;
+            const C2 = T0;
+            
+            return {
+                type: 'success',
+                C1, C2,
+                equation: `T(x) = ${C1.toFixed(2)}x + ${C2.toFixed(2)} °C`,
+                heatFlux: qL,
+                steps: [
+                    `From heat flux BC: q″(L) = -k·dT/dx = ${qL} W/m²`,
+                    `Therefore: dT/dx = ${(-qL/k).toFixed(2)} K/m → C₁ = ${C1.toFixed(2)}`,
+                    `From temperature BC: T(0) = ${T0}°C → C₂ = ${T0}`,
+                    `Temperature at x=L: T(L) = ${C1.toFixed(2)}·${L} + ${T0} = ${(C1*L + T0).toFixed(2)}°C`
+                ],
+                interpretation: `Temperature gradient ${C1.toFixed(2)} K/m determined by specified heat flux. Temperature rises/falls linearly from ${T0}°C.`,
+                energyBalance: {
+                    fluxIn: Math.abs(qL),
+                    fluxOut: Math.abs(qL),
+                    balanced: true
+                }
+            };
+        }
+        
+        function solveNeumannInconsistent(L, k, q0, qL) {
+            const tol = 0.01;
+            const isInconsistent = Math.abs(q0 - qL) > tol;
+            
+            if (isInconsistent) {
+                // Determine physical interpretation based on signs
+                let physicalExplanation;
+                if (q0 > 0 && qL < 0) {
+                    physicalExplanation = `Heat entering from both sides: q″(0) = ${q0} flows right, q″(L) = ${qL} (negative, so flows left into wall). Total energy accumulating: ${(q0 + Math.abs(qL)).toFixed(2)} W/m². Wall would heat indefinitely.`;
+                } else if (q0 < 0 && qL > 0) {
+                    physicalExplanation = `Heat exiting from both sides: q″(0) = ${q0} flows left, q″(L) = ${qL} flows right. Total energy leaving exceeds any source. Wall would cool indefinitely.`;
+                } else {
+                    physicalExplanation = `Different flux magnitudes: q″(0) = ${q0} W/m² ≠ q″(L) = ${qL} W/m². Energy imbalance = ${(q0 - qL).toFixed(2)} W/m² per unit depth accumulating in wall.`;
+                }
+                
+                return {
+                    type: 'error',
+                    C1: null, C2: null,
+                    equation: 'No steady-state solution exists',
+                    heatFlux: null,
+                    steps: [
+                        `Heat flux at x=0: q″(0) = ${q0} W/m² (positive = flows in +x direction)`,
+                        `Heat flux at x=L: q″(L) = ${qL} W/m²`,
+                        `For steady 1D conduction: q″ must be constant everywhere`,
+                        `But q″(0) = ${q0} ≠ q″(L) = ${qL}`,
+                        `Net energy accumulation rate: ${(q0 - qL).toFixed(2)} W/m² per unit depth`,
+                        `This violates steady-state energy conservation!`
+                    ],
+                    interpretation: physicalExplanation + ` No steady-state solution exists for 1D conduction with constant k and no internal generation.`,
+                    energyBalance: {
+                        fluxIn: q0,
+                        fluxOut: qL,
+                        balanced: false
+                    }
+                };
+            } else {
+                // If they're actually equal (shouldn't happen with this case, but handle it)
+                return solveNeumannConsistent(L, k, q0, qL);
+            }
+        }
+        
+        function solveNeumannConsistent(L, k, q0, qL) {
+            const tol = 0.01;
+            
+            // Check if fluxes are actually equal (including sign)
+            if (Math.abs(q0 - qL) > tol) {
+                // Not actually consistent - route to inconsistent handler
+                return solveNeumannInconsistent(L, k, q0, qL);
+            }
+            
+            const qAvg = (q0 + qL) / 2;
+            const C1 = -qAvg / k;
+            
+            return {
+                type: 'warning',
+                C1, C2: 'T₀ (arbitrary)',
+                equation: `T(x) = ${C1.toFixed(2)}x + T₀  (T₀ undetermined)`,
+                heatFlux: qAvg,
+                steps: [
+                    `Heat flux at x=0: q″(0) = ${q0} W/m²`,
+                    `Heat flux at x=L: q″(L) = ${qL} W/m²`,
+                    `Steady-state requires constant heat flux: q″(0) ≈ q″(L) ✓`,
+                    `Average flux: q″ = ${qAvg.toFixed(2)} W/m²`,
+                    `From Fourier's law: dT/dx = ${C1.toFixed(2)} K/m → C₁ = ${C1.toFixed(2)}`,
+                    `But absolute temperature T₀ is not specified anywhere!`,
+                    `Example: T(x) = ${C1.toFixed(2)}x + 20, or T(x) = ${C1.toFixed(2)}x + 50, etc.`,
+                    `All satisfy energy balance but have different temperature levels.`
+                ],
+                interpretation: `Steady-state requires constant heat flux: q″(0) ≈ q″(L) (${q0.toFixed(1)} ≈ ${qL.toFixed(1)} W/m²). Gradient is determined but absolute temperature level is not. Need additional constraint like T(0) = T₀.`,
+                energyBalance: {
+                    fluxIn: q0,
+                    fluxOut: qL,
+                    balanced: Math.abs(q0 - qL) < tol
+                }
+            };
+        }
+        
+        function solveRobin(L, k, h, Tinf, TL) {
+            // Boundary condition: -k·dT/dx|₀ = h(Tinf - T₀)
+            // With T(x) = C₁x + C₂: T₀ = C₂, dT/dx = C₁
+            // So: -k·C₁ = h(Tinf - C₂)
+            // Rearrange: -k·C₁ + h·C₂ = h·Tinf ... (1)
+            // And T(L) = C₁·L + C₂ = TL ... (2)
+            
+            // From (2): C₂ = TL - C₁·L
+            // Substitute into (1): -k·C₁ + h·(TL - C₁·L) = h·Tinf
+            // -k·C₁ + h·TL - h·L·C₁ = h·Tinf
+            // -C₁(k + h·L) = h·Tinf - h·TL
+            // C₁ = -h(Tinf - TL) / (k + h·L)
+            
+            const C1 = -(h * (Tinf - TL)) / (k + h * L);
+            const C2 = TL - C1 * L;
+            const T0 = C2;
+            const q = -k * C1;
+            
+            return {
+                type: 'success',
+                C1, C2,
+                equation: `T(x) = ${C1.toFixed(2)}x + ${C2.toFixed(2)} °C`,
+                heatFlux: q,
+                steps: [
+                    `Convection BC: -k·dT/dx|₀ = h(T∞ - T₀)`,
+                    `With T₀ = C₂, dT/dx = C₁: -k·C₁ = h(T∞ - C₂)`,
+                    `Rearranging: -k·C₁ + h·C₂ = h·${Tinf} ... (Eq 1)`,
+                    `Fixed temperature: C₁·${L} + C₂ = ${TL} ... (Eq 2)`,
+                    `Solving system: C₁ = ${C1.toFixed(2)}, C₂ = ${C2.toFixed(2)}`,
+                    `Surface temperature: T₀ = ${T0.toFixed(2)}°C`,
+                    `Convective heat flux: q″ = h(T∞ - T₀) = ${h}·(${Tinf} - ${T0.toFixed(2)}) = ${(h*(Tinf - T0)).toFixed(2)} W/m²`,
+                    `Conduction flux check: q″ = -k·C₁ = ${q.toFixed(2)} W/m²`
+                ],
+                interpretation: `Convection couples surface temperature and heat flux. Air at ${Tinf}°C ${Tinf > T0 ? 'heats' : 'cools'} the wall surface. Temperature varies linearly through wall to ${TL}°C.`,
+                energyBalance: {
+                    fluxIn: Math.abs(h * (Tinf - T0)),
+                    fluxOut: Math.abs(q),
+                    balanced: Math.abs(Math.abs(h * (Tinf - T0)) - Math.abs(q)) < 0.5
+                }
+            };
+        }
+        
+        function solveInsulated(L, k, TL) {
+            const C1 = 0; // zero gradient
+            const C2 = TL;
+            
+            return {
+                type: 'success',
+                C1, C2,
+                equation: `T(x) = ${TL} °C  (uniform temperature)`,
+                heatFlux: 0,
+                steps: [
+                    `Insulated boundary: q″(0) = 0 → dT/dx = 0 → C₁ = 0`,
+                    `Fixed temperature: T(L) = ${TL}°C → C₂ = ${TL}`,
+                    `Result: T(x) = ${TL}°C everywhere`
+                ],
+                interpretation: `Zero gradient means zero heat flux. With one surface insulated and other at ${TL}°C, entire wall equilibrates to uniform temperature ${TL}°C at steady state. No heat transfer occurs.`,
+                energyBalance: {
+                    fluxIn: 0,
+                    fluxOut: 0,
+                    balanced: true
+                }
+            };
+        }
+        
+        function displayResult(result, L, k) {
+            const x = [];
+            const T = [];
+            
+            if (result.type !== 'error') {
+                for (let xi = 0; xi <= L; xi += L/100) {
+                    x.push(xi);
+                    if (typeof result.C2 === 'number') {
+                        T.push(result.C1 * xi + result.C2);
+                    } else {
+                        // Infinite solutions - show example
+                        T.push(result.C1 * xi + 20);
+                    }
+                }
+            }
+            
+            const trace = {
+                x: x,
+                y: T,
+                type: 'scatter',
+                mode: 'lines+markers',
+                name: 'T(x)',
+                line: { 
+                    width: 4, 
+                    color: result.type === 'success' ? '#28a745' : (result.type === 'warning' ? '#ffc107' : '#dc3545') 
+                },
+                marker: { size: 3 }
+            };
+            
+            const layout = {
+                title: {
+                    text: result.type === 'success' ? '✓ Temperature Profile' : 
+                          (result.type === 'warning' ? '⚠ Temperature Profile (Example)' : '✗ No Steady-State Solution'),
+                    font: { size: 18, weight: 'bold' }
+                },
+                xaxis: { 
+                    title: 'Position x (m)', 
+                    gridcolor: '#e0e0e0',
+                    range: [0, L]
+                },
+                yaxis: { 
+                    title: 'Temperature T (°C)', 
+                    gridcolor: '#e0e0e0'
+                },
+                plot_bgcolor: '#f8f9fa',
+                paper_bgcolor: 'white',
+                font: { size: 13 }
+            };
+            
+            if (result.type !== 'error') {
+                Plotly.newPlot('plot', [trace], layout, {responsive: true});
+            } else {
+                Plotly.newPlot('plot', [], layout, {responsive: true});
+            }
+            
+            let html = `
+                <div class="result-card ${result.type}">
+                    <h3>${result.type === 'success' ? '✓ Solution Found' : 
+                         (result.type === 'warning' ? '⚠ Infinite Solutions' : '✗ No Steady-State Solution')}</h3>
+                    <div class="equation">${result.equation}</div>
+                    
+                    ${result.heatFlux !== null ? `
+                        <p><strong>Heat Flux:</strong> q″ = ${result.heatFlux.toFixed(2)} W/m²</p>
+                    ` : ''}
+                    
+                    <div class="steps">
+                        <h4>📝 Solution Steps:</h4>
+                        ${result.steps.map(step => `<div>${step}</div>`).join('')}
+                    </div>
+                </div>
+                
+                <div class="physical-interpretation">
+                    <h4>🌡️ Physical Interpretation:</h4>
+                    <p>${result.interpretation}</p>
+                </div>
+                
+                <div class="energy-balance">
+                    <h4>⚡ Energy Balance Check:</h4>
+                    <p><strong>Heat flux in:</strong> ${result.energyBalance.fluxIn.toFixed(2)} W/m²</p>
+                    <p><strong>Heat flux out:</strong> ${result.energyBalance.fluxOut.toFixed(2)} W/m²</p>
+                    <p><strong>Balance:</strong> ${result.energyBalance.balanced ? 
+                        '✓ Balanced (steady state achieved)' : 
+                        '✗ Imbalanced (violates energy conservation!)'}</p>
+                </div>
+            `;
+            
+            document.getElementById('resultOutput').innerHTML = html;
+        }
+        
+        // Initialize
+        updateCaseDescription();
+        calculate();
+    </script>
+</body>
+</html>
